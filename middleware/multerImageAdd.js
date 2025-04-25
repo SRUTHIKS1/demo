@@ -1,20 +1,27 @@
+
 const multer = require("multer")
 const path = require("path")
-const storage = multer.diskStorage({
+
+
+const storageAds = multer.diskStorage({
   destination: "./profileImages/",
   filename: (req, file, cb) => {
     cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
   },
 });
-const fileFilter = (req, file, cb) => {
+
+const fileFilterAds = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
     cb(new Error("Only image files are allowed!"), false);
   }
 };
-const upload = multer({ storage, fileFilter })
-module.exports = upload
 
+const uploadAds = multer({
+  storage: storageAds,
+  fileFilter: fileFilterAds,
+  limits: { files: 10 }, // optional: limit number of files
+});
 
-
+module.exports = uploadAds;

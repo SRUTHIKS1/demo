@@ -3,22 +3,23 @@ const bcrypt = require("bcrypt")
 require('dotenv').config()
 const users = require("../schema/userschema")
 
-const Ad = require('../schema/adschema');
+const Ad =require("../schema/adschema")
 
 exports.getAllAds = async (req, res) => {
+  console.log("inside get all ads" )
   try {
-    const ads = await Ad.find().sort({ createdAt: -1 }); // latest first
-    res.status(200).json({ message: "Ads fetched successfully", data: ads });
-  } catch (error) {
-    console.error("Error fetching ads:", error);
-    res.status(500).json({ message: "Failed to fetch ads", error: error.message });
+      const adds = await Ad.find();
+      
+      res.status(200).json(adds);
+  } catch (err) {
+      res.status(500).json({ error: err.message });
   }
 };
 
 
 
-
 exports.createAd = async (req, res) => {
+
   try {
     const {
       category,
@@ -35,7 +36,7 @@ exports.createAd = async (req, res) => {
       userId
     } = req.body;
 
-    const images = req.files?.map(file => `/uploadsAds/${file.filename}`) || [];
+    const images = req.files?.map(file => `/profileImages/${file.filename}`) || [];
 
     const newAd = new Ad({
       category,
@@ -172,7 +173,8 @@ exports.editUser = async (req, res) => {
     const userId = Number(req.params.userId);
     // console.log("Updating user with ID:", userId, "Request Body:", req.body);
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = req.file ? `/profileImages/${req.file.filename}` : null;
+
     const existingUser = await users.findOne({ userId });
 
     if (!existingUser) {
@@ -181,13 +183,13 @@ exports.editUser = async (req, res) => {
     }
 
     const updateData = {
-      Image: imageUrl ? imageUrl : "",
+      ...(imageUrl ? { Image: imageUrl } : {}),
       name: req.body.name,
       address: req.body.address,
       location: req.body.location,
       contact: req.body.contact,
     };
-
+    
     const updatedUser = await users.findOneAndUpdate(
       { userId },
       { $set: updateData },
@@ -208,15 +210,57 @@ exports.editUser = async (req, res) => {
   }
 };
 
+// exports.editAd = async (req, res) => {
+//   try {
+//     const adId = req.params.adId;
 
+//     const {
+//       category,
+//       subcategory,
+//       brand,
+//       year,
+//       fuel,
+//       transmission,
+//       kmDriven,
+//       owners,
+//       title,
+//       description,
+//       price,
+//     } = req.body;
 
+//     const images = req.files?.map(file => `/profileImages/${file.filename}`) || [];
 
+//     const updateData = {
+//       category,
+//       subcategory,
+//       brand,
+//       year,
+//       fuel,
+//       transmission,
+//       kmDriven,
+//       owners,
+//       title,
+//       description,
+//       price,
+//     };
 
+//     if (images.length > 0) {
+//       updateData.images = images;
+//     }
 
+//     const updatedAd = await Ad.findByIdAndUpdate(
+//       adId,
+//       { $set: updateData },
+//       { new: true }
+//     );
 
+//     if (!updatedAd) {
+//       return res.status(404).json({ message: "Ad not found" });
+//     }
 
-
-
-
-
-
+//     res.status(200).json({ message: "Ad updated successfully", data: updatedAd });
+//   } catch (error) {
+//     console.error("Error updating ad:", error);
+//     res.status(500).json({ message: "Failed to update ad", error: error.message });
+//   }
+// };

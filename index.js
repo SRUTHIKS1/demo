@@ -9,8 +9,8 @@ const app=express()
 require('./database/connection')
 const PORT=3000;
 
-app.use('/uploads',express.static("uploads"))
-app.use("/uploadsAds", express.static("uploadsAds"));
+// app.use('/uploads',express.static("uploads"))
+app.use("/profileImages", express.static("profileImages"));
 
 app.use(express.json());
 app.use(cors())
