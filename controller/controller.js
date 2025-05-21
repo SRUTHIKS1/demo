@@ -23,7 +23,7 @@ exports.getAllAds = async (req, res) => {
 
 exports.createAd = async (req, res) => {
   try {
-    const { category, subcategory, brand, year, fuel, transmission, kmDriven, owners, title, description, price, userId } = req.body;
+    const { category, subcategory, brand, year, fuel, transmission, kmDriven, owners, title, description, price, userId,location } = req.body;
 
     const images = req.files?.map(file => `/profileImages/${file.filename}`) || [];
     const adId = await generateProductId();
@@ -31,6 +31,7 @@ exports.createAd = async (req, res) => {
 
     const newAd = new Ad({
       adId,
+      location,
       category,
       subcategory,
       brand,
@@ -275,6 +276,24 @@ exports.searchItem = async (req, res) => {
   }
 };
 
+exports.searchByLocation = async (req, res) => {
+  try {
+    const locationQuery = req.params.location;
+
+    if (!locationQuery) return res.json({ items: [] });
+
+    const items = await Ad.find({
+      location: { $regex: locationQuery, $options: 'i' }  // case-insensitive search
+    });
+
+    res.json({ items });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to search by location!' });
+  }
+};
+
+
 exports.deleteAd = async (req, res) => {
   try {
     const { adId } = req.params;
@@ -294,24 +313,23 @@ exports.deleteAd = async (req, res) => {
 
 
 exports.getUsersAds = async (req, res) => {
-
   try {
-    const userId = Number(req.params.userId)
-    console.log("userId", userId)
+    const userId = req.params.userId; // ✅ Don't convert to Number
+    console.log("userId", userId);
 
-    const existingAds = await Ad.find({ userId })
-    console.log(existingAds)
-    if (!existingAds) {
-      return res.status(400).json("Ads not found")
-    }
-    else if (existingAds) {
-      return res.status(200).json({ message: "success", data: existingAds })
+    const existingAds = await Ad.find({ userId }); // or { postedBy: userId } if that's the correct field
+    console.log(existingAds);
+
+    if (!existingAds || existingAds.length === 0) {
+      return res.status(404).json("Ads not found");
     }
 
+    return res.status(200).json({ message: "success", data: existingAds });
   } catch (error) {
-    res.status(401).json(error)
+    res.status(500).json({ message: "Server error", error });
   }
-}
+};
+
 
 exports.forgotPassword = async (req, res) => {
   try {
@@ -389,3 +407,71 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
+
+
+
+
+exports.addToFavorites = async (req, res) => {
+  try {
+    const { userId, adId } = req.params;
+    console.log("Received userId:", userId, "adId:", adId);
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    const user = await users.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.favorites.includes(adId)) {
+      user.favorites.push(adId);
+      await user.save();
+    }
+
+    res.status(200).json({ message: "Added to favorites", favorites: user.favorites });
+  } catch (error) {
+    console.error("Error adding to favorites:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Remove from favorites
+exports.removeFromFavorites = async (req, res) => {
+  try {
+    const { userId, adId } = req.body;
+
+    const user = await users.findOne({ userId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.favorites = user.favorites.filter(id => id !== adId);
+    await user.save();
+
+    res.status(200).json({ message: "Removed from favorites", favorites: user.favorites });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get all favorite ads
+exports.getFavorites = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await users.findOne({ userId });
+
+    if (!user || !user.favorites || user.favorites.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const favorites = await Ad.find({ adId: { $in: user.favorites } });
+
+    res.status(200).json(favorites);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

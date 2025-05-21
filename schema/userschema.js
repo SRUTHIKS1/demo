@@ -17,6 +17,7 @@ const userSchema = mongoose.Schema({
         type: String
 
     },
+   
     contact: {
         type: String
 
@@ -31,10 +32,17 @@ const userSchema = mongoose.Schema({
         required: true,
         unique: true
     },
+     favorites: [{ type: Number }] ,
     password: {
         type: String,
         required: true
-    }
+    },
+    resetPasswordToken:String,
+    resetPasswordExpires:Date,
+
+    
+
+    
 },
 
     { timestamps: true }
