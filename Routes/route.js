@@ -1,5 +1,5 @@
 const express = require("express")
-const { register, login, getUser, editUser, createAd, getAllAds, getAdById, updateAd, searchItem, deleteAd, getUsersAds, addToFavorites, removeFromFavorites, getFavorites, contactSeller, searchByLocation} = require("../controller/controller")
+const { register, login, getUser, editUser, createAd, getAllAds, getAdById, updateAd, searchItem, deleteAd, getUsersAds, searchByLocation, addToFavorites, removeFromFavorites} = require("../controller/controller")
  const upload = require('../middleware/multerMiddleware')
 const uploadAds = require("../middleware/multerMiddleware")
 const jwtMiddleware=require("../middleware/jwtMiddleware")
@@ -17,10 +17,10 @@ router.get("/getAdById/:adId", getAdById);
 router.delete("/deleteAd/:adId", deleteAd);
 router.get("/getUsersAds/:userId", getUsersAds);
 
-router.post("/addToFavorites/:userId/:adId", addToFavorites);
+router.post("/favorites/add", addToFavorites);
+router.post("/favorites/remove", removeFromFavorites);
 
-router.delete("/removeFromFavorites/:adId", removeFromFavorites);
-router.get("/getFavorites/:userId", getFavorites);
+
 
 router.get('/search/location/:location', searchByLocation);
 

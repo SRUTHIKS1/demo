@@ -32,7 +32,11 @@ const userSchema = mongoose.Schema({
         required: true,
         unique: true
     },
-     favorites: [{ type: Number }] ,
+     favorites: {
+    type: [Number],     // array of numbers for ad IDs
+    required: true,
+    default: [],        // <-- add default empty array
+  },
     password: {
         type: String,
         required: true

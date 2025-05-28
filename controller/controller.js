@@ -411,83 +411,61 @@ exports.resetPassword = async (req, res) => {
 
 
 
-const mongoose = require('mongoose'); // if not already imported
-
 exports.addToFavorites = async (req, res) => {
-  try {
-    const { userId, adId } = req.body;
+    try {
+        const { userId, adId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(adId)) {
-      return res.status(400).json({ message: "Invalid userId or adId" });
+        if (!userId || !adId) {
+            return res.status(400).json({ message: 'userId and adId are required' });
+        }
+
+        const user = await users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if ad already in favorites
+        if (user.favorites.includes(Number(adId))) {
+            return res.status(400).json({ message: 'Ad already in favorites' });
+        }
+
+        user.favorites.push(Number(adId));
+        await user.save();
+
+        res.status(200).json({ 
+            message: 'Added to favorites',
+            favorites: user.favorites 
+        });
+    } catch (error) {
+        console.error('Error in addToFavorites:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    const user = await users.findOne({ _id: userId });
-    const ad = await Ad.findOne({ _id: adId });
-
-    if (!user || !ad) {
-      return res.status(404).json({ message: 'User or Ad not found' });
-    }
-
-    if (user.favorites.includes(ad._id)) {
-      return res.status(409).json({ message: 'Ad already in favorites' });
-    }
-
-    user.favorites.push(ad._id);
-    await user.save();
-
-    return res.status(200).json({ message: 'Ad added to favorites', favorites: user.favorites });
-  } catch (error) {
-    console.error("Error adding to favorites:", error);
-    return res.status(500).json({ message: 'Internal Server Error' });
-  }
 };
-
 
 // Remove from favorites
 exports.removeFromFavorites = async (req, res) => {
-  try {
-    const { userId, adId } = req.body;
+    try {
+        const { userId, adId } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(adId)) {
-      return res.status(400).json({ message: "Invalid userId or adId" });
+        if (!userId || !adId) {
+            return res.status(400).json({ message: 'userId and adId are required' });
+        }
+
+        const user = await users.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Remove the ad from favorites
+        user.favorites = user.favorites.filter(favId => favId !== Number(adId));
+        await user.save();
+
+        res.status(200).json({ 
+            message: 'Removed from favorites',
+            favorites: user.favorites 
+        });
+    } catch (error) {
+        console.error('Error removing from favorites:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-
-    const user = await users.findOne({ _id: userId });
-    const ad = await Ad.findOne({ _id: adId });
-
-    if (!user || !ad) {
-      return res.status(404).json({ message: 'User or Ad not found' });
-    }
-
-    user.favorites = user.favorites.filter(favId => favId.toString() !== ad._id.toString());
-    await user.save();
-
-    return res.status(200).json({ message: 'Ad removed from favorites', favorites: user.favorites });
-  } catch (error) {
-    console.error("Error removing from favorites:", error);
-    return res.status(500).json({ message: 'Internal Server Error' });
-  }
 };
-
-// Get user's favorite ads
-exports.getFavorites = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
-    }
-
-    const user = await users.findOne({ _id: userId }).populate('favorites');
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    return res.status(200).json({ message: 'Favorites retrieved', favorites: user.favorites });
-  } catch (error) {
-    console.error("Error retrieving favorites:", error);
-    return res.status(500).json({ message: 'Internal Server Error' });
-  }
-};
-  
