@@ -200,7 +200,6 @@ exports.editUser = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 exports.updateAd = async (req, res) => {
   try {
     const adId = req.params.adId;  // Ensure you're correctly accessing the adId in the request params
@@ -411,37 +410,69 @@ exports.resetPassword = async (req, res) => {
 
 
 
-exports.addToFavorites = async (req, res) => {
+exports.getUserFavorites = async (req, res) => {
     try {
-        const { userId, adId } = req.body;
+        // console.log("userid1", req)
+        const userId = Number(req.params.userId);
 
-        if (!userId || !adId) {
-            return res.status(400).json({ message: 'userId and adId are required' });
+        console.log("userid", userId)
+
+        const existingUser = await users.findOne({ userId })
+
+        if (!existingUser) {
+            return res.status(404).json({ message: "User not found" });
         }
+        console.log("result", existingUser.favorites);
+        console.log(typeof (existingUser.favorites));
 
-        const user = await users.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+       const favoriteAdIds = existingUser.favorites.map(Number);
 
-        // Check if ad already in favorites
-        if (user.favorites.includes(Number(adId))) {
-            return res.status(400).json({ message: 'Ad already in favorites' });
-        }
-
-        user.favorites.push(Number(adId));
-        await user.save();
-
-        res.status(200).json({ 
-            message: 'Added to favorites',
-            favorites: user.favorites 
+        const favoriteAds = await Ad.find({
+            adId: { $in: favoriteAdIds }
         });
+
+
+
+
+        console.log("ADS", favoriteAds);
+        res.status(200).json({ favorites: favoriteAds });
     } catch (error) {
-        console.error('Error in addToFavorites:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Error fetching favorites:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 
+
+exports.addToFavorites = async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const adId = Number(req.body.adId);
+        console.log("userid", userId, "addid", adId)
+
+        const existingUser = await users.findOne({ userId: userId });
+        if (!existingUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (existingUser.favorites.includes(adId)) {
+            return res.status(400).json({ message: 'Product already in favorites' });
+        }
+
+        const updatedUser = await users.findOneAndUpdate(
+            { userId: userId },
+            { $addToSet: { favorites: adId } },
+            { new: true }
+        );
+
+        res.status(200).json({
+            message: 'Product added to favorites',
+            favorites: updatedUser.favorites
+        });
+    } catch (error) {
+        console.error('Error adding to favorites:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
 // Remove from favorites
 exports.removeFromFavorites = async (req, res) => {
     try {
@@ -451,13 +482,14 @@ exports.removeFromFavorites = async (req, res) => {
             return res.status(400).json({ message: 'userId and adId are required' });
         }
 
-        const user = await users.findById(userId);
+        const user = await users.findOne({ userId: Number(userId) });
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Remove the ad from favorites
-        user.favorites = user.favorites.filter(favId => favId !== Number(adId));
+        // Filter out the adId (string comparison)
+        user.favorites = user.favorites.filter(favId => favId !== adId);
         await user.save();
 
         res.status(200).json({ 

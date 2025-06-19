@@ -22,7 +22,7 @@ const token = req.headers['authorization'] && req.headers['authorization'].split
         next();
     } catch (error) {
         console.log(error);
-        if (error.name === 'TokenExpiredErrr') {
+        if (error.name === 'TokenExpiredError') {
             // Responding with a 401 Unauthorized status if the token has expired
             res.status(401).json("Authorization failed, token has expired");
         } else if (error.name === 'JsonWebTokenError') {
