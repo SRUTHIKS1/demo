@@ -1,5 +1,5 @@
 const express = require("express")
-const { register, login, getUser, editUser, createAd, getAllAds, getAdById, updateAd, searchItem, deleteAd, getUsersAds, searchByLocation, addToFavorites, removeFromFavorites, getUserFavorites} = require("../controller/controller")
+const { register, login, getUser, editUser, createAd, getAllAds, getAdById, updateAd, searchItem, deleteAd, getUsersAds, searchByLocation, addToFavorites, removeFromFavorites, getUserFavorites, forgotPassword, resetPassword} = require("../controller/controller")
  const upload = require('../middleware/multerMiddleware')
 const uploadAds = require("../middleware/multerMiddleware")
 const jwtMiddleware=require("../middleware/jwtMiddleware")
@@ -16,9 +16,10 @@ router.get("/getAllAds", getAllAds);
 router.get("/getAdById/:adId", getAdById);
 router.delete("/deleteAd/:adId", deleteAd);
 router.get("/getUsersAds/:userId", getUsersAds);
+router.get("/getUsersAds/:userId", getUsersAds);
+router.post("/forgotPassword", forgotPassword);
 
-router.get("/getUserFavorites/:userId", getUserFavorites);
-
+router.post("/resetPassword/:token",resetPassword)
 router.post("/addToFavorites", addToFavorites);
 router.post("/removeFromFavorites", removeFromFavorites);
 
